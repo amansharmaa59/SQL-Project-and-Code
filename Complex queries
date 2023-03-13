@@ -1,0 +1,164 @@
+
+create table icc_world_cup
+(
+Team_1 Varchar(20),
+Team_2 Varchar(20),
+Winner Varchar(20)
+);
+INSERT INTO icc_world_cup values('India','SL','India');
+INSERT INTO icc_world_cup values('SL','Aus','Aus');
+INSERT INTO icc_world_cup values('SA','Eng','Eng');
+INSERT INTO icc_world_cup values('Eng','NZ','NZ');
+INSERT INTO icc_world_cup values('Aus','India','India');
+
+select * from icc_world_cup;
+select Team_name,count(1) as no_of_match_played,sum(win_flag) as won_match, count(1) - sum(win_flag) as no_of_losses
+from (
+SELECT Team_1 as Team_name,case when Team_1 = Winner then 1 else 0 end as win_flag
+from icc_world_cup
+union all
+SELECT Team_2 as Team_name,case when Team_2 = Winner then 1 else 0 end as win_flag
+from icc_world_cup) a
+group by Team_name
+order by won_match desc
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+create table customer_orders (
+order_id integer,
+customer_id integer,
+order_date date,
+order_amount integer
+);
+select * from customer_orders
+insert into customer_orders values(1,100,cast('2022-01-01' as date),2000),(2,200,cast('2022-01-01' as date),2500),(3,300,cast('2022-01-01' as date),2100)
+,(4,100,cast('2022-01-02' as date),2000),(5,400,cast('2022-01-02' as date),2200),(6,500,cast('2022-01-02' as date),2700)
+,(7,100,cast('2022-01-03' as date),3000),(8,400,cast('2022-01-03' as date),1000),(9,600,cast('2022-01-03' as date),3000)
+;
+
+with cte as (
+select customer_id,min(order_date) as first_visit from customer_orders
+group by customer_id)
+
+select co.order_date,
+       sum(case when co.order_date = cte.first_visit then 1 else 0 end) as first_cust,
+	   sum(case when co.order_date != cte.first_visit then 1 else 0 end) as repeat_cust
+from customer_orders co
+inner join cte
+on co.customer_id = cte.customer_id
+group by co.order_date
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+create table entries ( 
+name varchar(20),
+address varchar(20),
+email varchar(20),
+floor int,
+resources varchar(10));
+
+insert into entries 
+values ('A','Bangalore','A@gmail.com',1,'CPU'),('A','Bangalore','A1@gmail.com',1,'CPU'),('A','Bangalore','A2@gmail.com',2,'DESKTOP')
+,('B','Bangalore','B@gmail.com',2,'DESKTOP'),('B','Bangalore','B1@gmail.com',2,'DESKTOP'),('B','Bangalore','B2@gmail.com',1,'MONITOR')
+select * from entries
+
+with total_visits as (select name,count(1) as total_visits, string_agg(resources,',') as resources_used from entries group by name),
+floor_visits as(
+select name,floor,count(1) as no_of_floor_visits,
+DENSE_RANK() over(partition by floor order by count(1) desc) as rnk
+from entries
+group by name,floor)
+select fv.name,fv.floor as most_visited_place,tv.total_visits,tv.resources_used
+from floor_visits fv
+inner join total_visits tv
+on fv.name = tv.name 
+where rnk = 1
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+create table employee 
+(
+emp_name varchar(10),
+dep_id int,
+salary int
+);
+delete from employee;
+insert into employee values 
+('Siva',1,30000),('Ravi',2,40000),('Prasad',1,50000),('Sai',2,20000)
+select * from employee
+
+with cte as
+(select emp_name,salary,dep_id,
+dense_rank() over(partition by dep_id order by salary) as rnk from employee),
+
+cte2 as (
+select dep_id,case when rnk in (select min(rnk) from cte) then emp_name end as min_salary_employee_name, 
+case when rnk in (select max(rnk) from cte) then emp_name end as max_salary_employee_name
+from cte)
+
+select dep_id,max(max_salary_employee_name)as max_salary_employee_name ,max(min_salary_employee_name)as min_salary_employee_name from cte2
+group by dep_id
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+create table icc_world_cup
+(
+Team_1 Varchar(20),
+Team_2 Varchar(20),
+Winner Varchar(20)
+);
+INSERT INTO icc_world_cup values('India','SL','India');
+INSERT INTO icc_world_cup values('SL','Aus','Aus');
+INSERT INTO icc_world_cup values('SA','Eng','Eng');
+INSERT INTO icc_world_cup values('Eng','NZ','NZ');
+INSERT INTO icc_world_cup values('Aus','India','India');
+
+select * from icc_world_cup;
+
+with cte as (select Team_1
+from icc_world_cup
+union all
+Select Team_2 from icc_world_cup),
+cte2 as(select Team_1 as team,count(1) as total_match from cte
+group by Team_1)
+select team,total_match,win_match,(total_match-win_match) as lose_match from (
+select team,total_match,
+count(case when team = Winner then 1 end) as win_match
+from cte2
+left join icc_world_cup a
+on cte2.team = a.winner
+group by team,total_match) as t
+order by win_match desc
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Drop table if exists emp
+CREATE TABLE [emp](
+ [emp_id] [int] NULL,
+ [emp_name] [varchar](50) NULL,
+ [salary] [int] NULL,
+ [manager_id] [int] NULL,
+ [emp_age] [int] NULL,
+ [dep_id] [int] NULL,
+ [dep_name] [varchar](20) NULL,
+ [gender] [varchar](10) NULL
+) ;
+insert into emp values(1,'Ankit',14300,4,39,100,'Analytics','Female')
+insert into emp values(2,'Mohit',14000,5,48,200,'IT','Male')
+insert into emp values(3,'Vikas',12100,4,37,100,'Analytics','Female')
+insert into emp values(4,'Rohit',7260,2,16,100,'Analytics','Female')
+insert into emp values(5,'Mudit',15000,6,55,200,'IT','Male')
+insert into emp values(6,'Agam',15600,2,14,200,'IT','Male')
+insert into emp values(7,'Sanjay',12000,2,13,200,'IT','Male')
+insert into emp values(8,'Ashish',7200,2,12,200,'IT','Male')
+insert into emp values(9,'Mukesh',7000,6,51,300,'HR','Male')
+insert into emp values(10,'Rakesh',8000,6,50,300,'HR','Male')
+insert into emp values(11,'Akhil',4000,1,31,500,'Ops','Male')
+
+
+select * from emp
+
+
+with cte as 
+(select *,rank() over(partition by dep_id order by salary desc) rn,
+rank() over(partition by dep_id order by salary)as rn2
+from emp)
+
+select * from cte
+where  (rn>=rn2) and (rn=3 or rn2= 1) and rn between 1 and 3
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -232,4 +232,67 @@ where o.delivery_time is null
  join orders o
  on r.r_id = o.r_id
  group by r.r_id,r.r_name
+-- restaurants with monthly sales greater than 500 for   
+  select r_id,sum(amount) as total_sale from orders
+  group by r_id
+  having sum(amount) > 1500
 
+  -- Show all orders with order details for a particular customer in a particular date range -- 2022-07-17 to 2022-06-30 -- user - Anki
+  
+
+
+   select * from orders o
+   join swiggy s
+   on o.user_id = s.user_id
+   join order_food f
+   on o.order_id = f.order_id 
+   where s.name = 'Ankit' and date <= '2022-07-17' and date >= '2022-06-30'
+  
+
+
+      -- Find restaurants with max repeated customers
+	  select r_name,loyal_cust from restaurants r
+	  join 
+(select top 1 r_id,count(*) as loyal_cust from(
+select r_id,user_id,count(*) as visits from orders
+group by r_id,user_id
+having count(*) > 1)as t
+group by r_id 
+order by count(*) desc) as t
+on r.r_id = t.r_id
+
+
+-- Month over month revenue growth of swiggy
+
+
+with cte as (
+select months,total_rev,lag(total_rev,1) over(order by total_rev) as month_rev_growth from(
+select datename(month, date)as months ,sum(amount) as total_rev from orders
+group by datename(month, date))as t)
+
+select months, ((total_rev - month_rev_growth) / month_rev_growth) * 100  from cte
+
+--Customer - favorite food
+with cte as (
+select s.user_id,f.f_id,count(f_id) as fvrt from swiggy s
+join orders o on s.user_id = o.user_id
+join order_food f on o.order_id = f.order_id
+group by s.user_id,f.f_id)
+
+
+select user_id , f_id from (
+select user_id,f_id,DENSE_RANK() over(partition by user_id order by fvrt desc) as rn from cte) as t
+where rn = 1
+
+
+-- Find the most loyal customers for all restaurant
+
+
+with cte as (
+select *,DENSE_RANK() over(partition by r_id order by n_time desc) as rn from (
+select r_id,user_id,count(*) as n_time from orders
+group by r_id,user_id) as t
+)
+
+select r_id,user_id from cte
+where rn = 1
